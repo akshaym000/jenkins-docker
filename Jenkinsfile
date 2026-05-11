@@ -1,28 +1,44 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = "akshaym000/my-python-app"
+        DOCKER_TAG = "latest"
+    }
+
     stages {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t my-python-app .'
+                sh 'docker build -t $DOCKER_IMAGE:$DOCKER_TAG .'
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Login to DockerHub') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'USER',
+                    passwordVariable: 'PASS'
                 )]) {
-
-                    sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
-
-                    sh 'docker tag my-python-app akshaym000/my-python-app:latest'
-
-                    sh 'docker push akshaym000/my-python-app:latest'
+                    sh 'echo $PASS | docker login -u $USER --password-stdin'
                 }
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
+            }
+        }
+
+        stage('Deploy Container') {
+            steps {
+                sh '''
+                docker stop myapp-container || true
+                docker rm myapp-container || true
+                docker run -d -p 5000:5000 --name myapp-container $DOCKER_IMAGE:$DOCKER_TAG
+                '''
             }
         }
     }
