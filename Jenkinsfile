@@ -21,7 +21,7 @@ pipeline {
 
                     sh 'docker tag my-python-app YOUR_DOCKERHUB_USERNAME/my-python-app:latest'
 
-                    sh 'docker push YOUR_DOCKERHUB_USERNAME/my-python-app:latest'
+                    sh 'docker push akshaym000/my-python-app:latest'
                 }
             }
         }
